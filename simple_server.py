@@ -144,7 +144,14 @@ async def health_check_head():
 async def detailed_health_check():
     """Detailed health check with full system status"""
     try:
-        import psutil
+        try:
+            import psutil
+        except ImportError:
+            return {
+                "status": "error",
+                "message": "psutil is not installed. System metrics unavailable.",
+                "timestamp": "2025-11-09T22:26:00Z"
+            }
         import os
 
         # System metrics
