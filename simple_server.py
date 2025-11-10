@@ -110,17 +110,17 @@ async def search_components(query: str) -> list:
 # HTTP Endpoints for health checks and Railway compatibility
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for Railway"""
-    return {
-        "status": "healthy",
-        "service": "Website Builder MCP Server",
-        "components_available": len(COMPONENTS),
-        "mcp_tools": ["list_components", "get_component", "search_components"]
-    }
+    """Simple health check endpoint for Railway - returns 200 OK"""
+    return {"status": "ok"}
+
+@app.head("/health")
+async def health_check_head():
+    """HEAD request support for health checks"""
+    return {"status": "ok"}
 
 @app.post("/list_components")
 async def http_list_components(category: Optional[str] = None):
-    """HTTP endpoint for listing components (for health checks)"""
+    """HTTP endpoint for listing components"""
     try:
         components = COMPONENTS
         if category:
