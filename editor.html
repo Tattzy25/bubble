@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Builder Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .editor-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Component Palette */
+        .component-palette {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .palette-header {
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fafafa;
+        }
+
+        .palette-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            margin-top: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .component-grid {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .component-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+
+        .component-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+        }
+
+        .component-item.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .component-icon {
+            width: 40px;
+            height: 40px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 18px;
+        }
+
+        .component-info h4 {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .component-info p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Canvas Area */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: white;
+            overflow: hidden;
+        }
+
+        .canvas-toolbar {
+            height: 50px;
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+        }
+
+        .toolbar-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .toolbar-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .canvas-viewport {
+            height: calc(100vh - 50px);
+            overflow: auto;
+            position: relative;
+        }
+
+        .page-canvas {
+            min-height: 100%;
+            padding: 20px;
+            background: #ffffff;
+        }
+
+        .canvas-section {
+            min-height: 200px;
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .canvas-section:hover {
+            border-color: #007bff;
+            background: rgba(0,123,255,0.02);
+        }
+
+        .canvas-section.drag-over {
+            border-color: #007bff;
+            background: rgba(0,123,255,0.05);
+        }
+
+        .section-label {
+            position: absolute;
+            top: -10px;
+            left: 16px;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+
+        .canvas-component {
+            padding: 16px;
+            margin: 8px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: white;
+            position: relative;
+            cursor: move;
+        }
+
+        .canvas-component:hover {
+            border-color: #007bff;
+        }
+
+        .component-toolbar {
+            position: absolute;
+            top: -32px;
+            right: 0;
+            display: none;
+            gap: 4px;
+        }
+
+        .canvas-component:hover .component-toolbar {
+            display: flex;
+        }
+
+        .component-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .component-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .component-btn.delete {
+            color: #dc3545;
+        }
+
+        /* Floating Bubble */
+        .floating-bubble {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #007bff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        .floating-bubble:hover {
+            transform: scale(1.1);
+        }
+
+        .floating-bubble.active {
+            background: #0056b3;
+        }
+
+        .bubble-icon {
+            font-size: 24px;
+            color: white;
+        }
+
+        .quick-palette {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 300px;
+            max-height: 400px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 999;
+            overflow: hidden;
+        }
+
+        .quick-palette.active {
+            display: block;
+        }
+
+        .quick-search {
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .quick-search input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .quick-components {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .component-palette {
+                width: 100%;
+                position: fixed;
+                top: 0;
+                left: -100%;
+                height: 100vh;
+                z-index: 1001;
+                transition: left 0.3s;
+            }
+
+            .component-palette.active {
+                left: 0;
+            }
+
+            .floating-bubble {
+                display: flex !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <!-- Component Palette -->
+        <div class="component-palette" id="componentPalette">
+            <div class="palette-header">
+                <h3>Components</h3>
+                <input type="text" class="search-input" placeholder="Search components..." id="componentSearch">
+            </div>
+            <div class="component-grid" id="componentGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading components...
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="canvas-container">
+            <div class="canvas-toolbar">
+                <button class="toolbar-btn" id="togglePalette">📚 Components</button>
+                <button class="toolbar-btn" id="previewMode">👁️ Preview</button>
+                <button class="toolbar-btn" id="saveProject">💾 Save</button>
+                <button class="toolbar-btn" id="exportHTML">📤 Export HTML</button>
+                <div style="margin-left: auto; font-size: 14px; color: #666;">
+                    Project: <span id="projectName">Untitled</span>
+                </div>
+            </div>
+
+            <div class="canvas-viewport">
+                <div class="page-canvas" id="pageCanvas">
+                    <div class="canvas-section" data-section="header">
+                        <div class="section-label">Header Section</div>
+                        <!-- Components will be dropped here -->
+                    </div>
+
+                    <div class="canvas-section" data-section="main">
+                        <div class="section-label">Main Content</div>
+                        <!-- Components will be dropped here -->
+                    </div>
+
+                    <div class="canvas-section" data-section="footer">
+                        <div class="section-label">Footer Section</div>
+                        <!-- Components will be dropped here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Bubble -->
+    <div class="floating-bubble" id="floatingBubble">
+        <div class="bubble-icon">⚡</div>
+    </div>
+
+    <!-- Quick Access Palette -->
+    <div class="quick-palette" id="quickPalette">
+        <div class="quick-search">
+            <input type="text" placeholder="Quick search..." id="quickSearch">
+        </div>
+        <div class="quick-components" id="quickComponents">
+            <!-- Quick components will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        class WebsiteBuilder {
+            constructor() {
+                this.mcpServer = 'http://localhost:8001';  // FastAPI server port
+                this.components = [];
+                this.currentProject = null;
+                this.previewMode = false;
+                this.draggedComponent = null;
+
+                this.init();
+            }
+
+            async init() {
+                await this.loadComponents();
+                this.setupEventListeners();
+                this.createProject();
+            }
+
+            async loadComponents() {
+                try {
+                    const response = await fetch(`${this.mcpServer}/list_components`);
+                    const data = await response.json();
+
+                    this.components = data;
+                    this.renderComponentPalette();
+                    this.renderQuickPalette();
+                } catch (error) {
+                    console.error('Failed to load components:', error);
+                    this.showError('Failed to load components');
+                }
+            }
+
+            renderComponentPalette() {
+                const grid = document.getElementById('componentGrid');
+                grid.innerHTML = '';
+
+                this.components.forEach(component => {
+                    const item = document.createElement('div');
+                    item.className = 'component-item';
+                    item.draggable = true;
+                    item.dataset.componentId = component.id;
+
+                    item.innerHTML = `
+                        <div class="component-icon">${this.getComponentIcon(component.category)}</div>
+                        <div class="component-info">
+                            <h4>${component.name}</h4>
+                            <p>${component.description || component.category}</p>
+                        </div>
+                    `;
+
+                    // Drag events
+                    item.addEventListener('dragstart', (e) => {
+                        this.draggedComponent = component;
+                        item.classList.add('dragging');
+                        e.dataTransfer.setData('component-id', component.id);
+                    });
+
+                    item.addEventListener('dragend', () => {
+                        item.classList.remove('dragging');
+                        this.draggedComponent = null;
+                    });
+
+                    grid.appendChild(item);
+                });
+            }
+
+            renderQuickPalette() {
+                const container = document.getElementById('quickComponents');
+                container.innerHTML = '';
+
+                // Show first 10 components
+                this.components.slice(0, 10).forEach(component => {
+                    const item = document.createElement('div');
+                    item.className = 'component-item';
+                    item.draggable = true;
+                    item.dataset.componentId = component.id;
+
+                    item.innerHTML = `
+                        <div class="component-icon">${this.getComponentIcon(component.category)}</div>
+                        <div class="component-info">
+                            <h4>${component.name}</h4>
+                        </div>
+                    `;
+
+                    item.addEventListener('dragstart', (e) => {
+                        this.draggedComponent = component;
+                        e.dataTransfer.setData('component-id', component.id);
+                    });
+
+                    container.appendChild(item);
+                });
+            }
+
+            setupEventListeners() {
+                // Component search
+                document.getElementById('componentSearch').addEventListener('input', (e) => {
+                    this.filterComponents(e.target.value);
+                });
+
+                document.getElementById('quickSearch').addEventListener('input', (e) => {
+                    this.filterQuickComponents(e.target.value);
+                });
+
+                // Toolbar buttons
+                document.getElementById('togglePalette').addEventListener('click', () => {
+                    document.getElementById('componentPalette').classList.toggle('active');
+                });
+
+                document.getElementById('previewMode').addEventListener('click', () => {
+                    this.togglePreviewMode();
+                });
+
+                document.getElementById('saveProject').addEventListener('click', () => {
+                    this.saveProject();
+                });
+
+                document.getElementById('exportHTML').addEventListener('click', () => {
+                    this.exportHTML();
+                });
+
+                // Floating bubble
+                document.getElementById('floatingBubble').addEventListener('click', () => {
+                    const palette = document.getElementById('quickPalette');
+                    const bubble = document.getElementById('floatingBubble');
+
+                    palette.classList.toggle('active');
+                    bubble.classList.toggle('active');
+                });
+
+                // Canvas drop zones
+                document.querySelectorAll('.canvas-section').forEach(section => {
+                    section.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        section.classList.add('drag-over');
+                    });
+
+                    section.addEventListener('dragleave', () => {
+                        section.classList.remove('drag-over');
+                    });
+
+                    section.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        section.classList.remove('drag-over');
+                        this.handleComponentDrop(e, section);
+                    });
+                });
+            }
+
+            async handleComponentDrop(e, section) {
+                const componentId = e.dataTransfer.getData('component-id');
+                if (!componentId || !this.currentProject) return;
+
+                try {
+                    // Add component to project via MCP
+                    const response = await fetch(`${this.mcpServer}/add_component_to_project`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            project_id: this.currentProject,
+                            component_id: componentId,
+                            section: section.dataset.section
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    // Render component on canvas
+                    this.renderComponentOnCanvas(result, section);
+
+                } catch (error) {
+                    console.error('Failed to add component:', error);
+                    this.showError('Failed to add component');
+                }
+            }
+
+            renderComponentOnCanvas(componentData, section) {
+                const componentElement = document.createElement('div');
+                componentElement.className = 'canvas-component';
+                componentElement.dataset.componentId = componentData.id;
+
+                componentElement.innerHTML = `
+                    <div class="component-toolbar">
+                        <button class="component-btn edit">✏️</button>
+                        <button class="component-btn delete">🗑️</button>
+                    </div>
+                    <div class="component-preview">
+                        <h4>${this.draggedComponent?.name || 'Component'}</h4>
+                        <p>Component instance: ${componentData.id}</p>
+                    </div>
+                `;
+
+                // Delete functionality
+                componentElement.querySelector('.delete').addEventListener('click', () => {
+                    componentElement.remove();
+                });
+
+                section.appendChild(componentElement);
+            }
+
+            filterComponents(query) {
+                const items = document.querySelectorAll('.component-item');
+                const lowerQuery = query.toLowerCase();
+
+                items.forEach(item => {
+                    const name = item.querySelector('h4').textContent.toLowerCase();
+                    const desc = item.querySelector('p').textContent.toLowerCase();
+
+                    if (name.includes(lowerQuery) || desc.includes(lowerQuery)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+
+            filterQuickComponents(query) {
+                // Similar filtering for quick palette
+                this.filterComponents(query);
+            }
+
+            togglePreviewMode() {
+                this.previewMode = !this.previewMode;
+                document.body.classList.toggle('preview-mode', this.previewMode);
+
+                const btn = document.getElementById('previewMode');
+                btn.classList.toggle('active', this.previewMode);
+                btn.textContent = this.previewMode ? '✏️ Edit' : '👁️ Preview';
+            }
+
+            async createProject() {
+                try {
+                    const response = await fetch(`${this.mcpServer}/create_project`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            project_name: `Project_${Date.now()}`
+                        })
+                    });
+
+                    const projectId = await response.text();
+                    this.currentProject = projectId;
+                    document.getElementById('projectName').textContent = `Project_${Date.now()}`;
+                } catch (error) {
+                    console.error('Failed to create project:', error);
+                }
+            }
+
+            async saveProject() {
+                if (!this.currentProject) return;
+
+                try {
+                    const response = await fetch(`${this.mcpServer}/generate_project_html`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            project_id: this.currentProject
+                        })
+                    });
+
+                    const html = await response.text();
+                    console.log('Project HTML generated:', html);
+                    this.showSuccess('Project saved successfully!');
+                } catch (error) {
+                    console.error('Failed to save project:', error);
+                    this.showError('Failed to save project');
+                }
+            }
+
+            async exportHTML() {
+                await this.saveProject();
+                // Additional export logic could go here
+            }
+
+            getComponentIcon(category) {
+                const icons = {
+                    'sections': '📄',
+                    'navigation': '🧭',
+                    'buttons': '🔘',
+                    'forms': '📝',
+                    'cards': '🃏',
+                    'layouts': '📐'
+                };
+                return icons[category] || '📦';
+            }
+
+            showError(message) {
+                // Simple error notification
+                alert(`Error: ${message}`);
+            }
+
+            showSuccess(message) {
+                // Simple success notification
+                alert(`Success: ${message}`);
+            }
+        }
+
+        // Initialize the editor when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new WebsiteBuilder();
+        });
+    </script>
+</body>
+</html>

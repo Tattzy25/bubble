@@ -1,0 +1,9 @@
+{
+	"servers": {
+		"my-mcp-server-3195d297": {
+			"url": "https://mcp.zapier.com/api/mcp/s/OGQ5Nzg4YmUtYmM0MC00NGQyLTkwMDItNTRmMTQ0ZThmMjFlOmExMmFiNzQxLTgzZDQtNGYxNS1iNmFkLWRjZjM4YzAzZDMwNw==/mcp",
+			"type": "http"
+		}
+	},
+	"inputs": []
+}
