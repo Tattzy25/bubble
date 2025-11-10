@@ -1,0 +1,17 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "npm run start"
+healthcheckPath = "/"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[build.watchPatterns]
+patterns = ["**/*"]
+
+[build.buildCommand]
+command = "npm run build"
+
+[build.installCommand]
+command = "npm install"

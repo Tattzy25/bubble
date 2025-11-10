@@ -1,0 +1,13 @@
+[build]
+builder = "python"
+
+[deploy]
+startCommand = "python simple_server.py"
+healthcheckPath = "/list_components"
+healthcheckMethod = "POST"
+healthcheckBody = "{}"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[build.watchPatterns]
+patterns = ["**/*"]
