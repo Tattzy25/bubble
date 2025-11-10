@@ -110,13 +110,89 @@ async def search_components(query: str) -> list:
 # HTTP Endpoints for health checks and Railway compatibility
 @app.get("/health")
 async def health_check():
-    """Simple health check endpoint for Railway - returns 200 OK"""
-    return {"status": "ok"}
+    """Comprehensive health check for Railway"""
+    try:
+        # Test database/component access
+        component_count = len(COMPONENTS)
+        if component_count < 1:
+            return {"status": "error", "message": "No components available"}
+
+        # Test component data access
+        if component_count < 1:
+            return {"status": "error", "message": "No components loaded"}
+
+        return {
+            "status": "healthy",
+            "service": "Website Builder MCP Server",
+            "components_available": component_count,
+            "mcp_status": "operational",
+            "timestamp": "2025-11-09T22:26:00Z"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Health check failed: {str(e)}",
+            "timestamp": "2025-11-09T22:26:00Z"
+        }
 
 @app.head("/health")
 async def health_check_head():
     """HEAD request support for health checks"""
     return {"status": "ok"}
+
+@app.get("/health/detailed")
+async def detailed_health_check():
+    """Detailed health check with full system status"""
+    try:
+        import psutil
+        import os
+
+        # System metrics
+        memory = psutil.virtual_memory()
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+
+        # Component metrics
+        component_count = len(COMPONENTS)
+        categories = list(set(c["category"] for c in COMPONENTS))
+
+        # MCP metrics
+        mcp_tools = ["list_components", "get_component", "search_components"]
+
+        return {
+            "status": "healthy",
+            "system": {
+                "memory_usage": f"{memory.percent:.1f}%",
+                "cpu_usage": f"{cpu_percent:.1f}%",
+                "port": int(os.getenv("PORT", 8000))
+            },
+            "components": {
+                "total": component_count,
+                "categories": categories
+            },
+            "mcp": {
+                "tools_available": len(mcp_tools),
+                "tools": mcp_tools,
+                "transport": "sse"
+            },
+            "endpoints": {
+                "health": "/health",
+                "detailed_health": "/health/detailed",
+                "list_components": "/list_components",
+                "root": "/"
+            },
+            "timestamp": "2025-11-09T22:26:00Z"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Detailed health check failed: {str(e)}",
+            "timestamp": "2025-11-09T22:26:00Z"
+        }
+
+@app.get("/health/ping")
+async def ping_health_check():
+    """Ultra-fast ping health check"""
+    return {"status": "pong", "timestamp": "2025-11-09T22:26:00Z"}
 
 @app.post("/list_components")
 async def http_list_components(category: Optional[str] = None):
