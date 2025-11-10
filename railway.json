@@ -1,28 +1,15 @@
 {
     "$schema": "https://railway.com/railway.schema.json",
     "build": {
-        "builder": "RAILPACK",
-        "watchPatterns": [
-            "/**"
-        ]
+        "builder": "python"
     },
     "deploy": {
-        "runtime": "V2",
-        "numReplicas": 1,
         "startCommand": "python simple_server.py",
-        "healthcheckPath": "Healthcheck Path: /list_components",
-        "preDeployCommand": [
-            "pip install -r requirements.txt"
-        ],
-        "sleepApplication": false,
-        "useLegacyStacker": false,
-        "multiRegionConfig": {
-            "us-west2": {
-                "numReplicas": 1
-            }
-        },
+        "healthcheckPath": "/list_components",
+        "healthcheckMethod": "POST",
+        "healthcheckBody": "{}",
         "restartPolicyType": "ON_FAILURE",
-        "healthcheckTimeout": 300,
-        "restartPolicyMaxRetries": 5
+        "restartPolicyMaxRetries": 10,
+        "watchPatterns": ["**/*"]
     }
 }
