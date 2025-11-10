@@ -6,10 +6,25 @@ Like the Zapier example but for our component system.
 
 import asyncio
 import json
+import os
 from typing import Optional
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from fastmcp import FastMCP
-from fastmcp.client.transports import StreamableHttpTransport
+
+# Initialize FastAPI for health checks and HTTP endpoints
+app = FastAPI(title="Website Builder MCP Server")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize FastMCP server
 mcp = FastMCP(name="Website Builder")
@@ -92,17 +107,54 @@ async def search_components(query: str) -> list:
 
     return matching_components
 
+# HTTP Endpoints for health checks and Railway compatibility
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Railway"""
+    return {
+        "status": "healthy",
+        "service": "Website Builder MCP Server",
+        "components_available": len(COMPONENTS),
+        "mcp_tools": ["list_components", "get_component", "search_components"]
+    }
+
+@app.post("/list_components")
+async def http_list_components(category: Optional[str] = None):
+    """HTTP endpoint for listing components (for health checks)"""
+    try:
+        components = COMPONENTS
+        if category:
+            components = [c for c in components if c["category"] == category]
+
+        return {
+            "status": "success",
+            "count": len(components),
+            "components": components
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "service": "Website Builder MCP Server",
+        "status": "running",
+        "endpoints": {
+            "health": "/health",
+            "list_components": "/list_components (POST)",
+            "mcp_sse": "/sse"
+        }
+    }
+
 if __name__ == "__main__":
     import sys
 
-    # Check if we should run with stdio (for testing) or sse
-    if len(sys.argv) > 1 and sys.argv[1] == "--stdio":
-        # Run with stdio transport for testing
-        mcp.run(transport="stdio")
-    else:
-        # Run the MCP server with SSE transport
-        mcp.run(
-            transport="sse",
-            host="127.0.0.1",
-            port=8000
-        )
+    # Run FastAPI server with HTTP endpoints for Railway compatibility
+    # MCP tools are available via HTTP POST to /list_components, /get_component, etc.
+    uvicorn.run(
+        "simple_server:app",
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 8000)),
+        reload=False
+    )

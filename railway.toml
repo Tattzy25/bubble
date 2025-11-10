@@ -5,4 +5,4 @@ healthcheckMethod = "POST"
 healthcheckBody = "{}"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-watchPatterns = ["**/*"]
+watchPatterns = ["/*/**", "/*.py", "/*.txt", "/*.toml", "/*.json"]
