@@ -8,6 +8,4 @@ healthcheckMethod = "POST"
 healthcheckBody = "{}"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-
-[build.watchPatterns]
-patterns = ["**/*"]
+watchPatterns = ["**/*"]
