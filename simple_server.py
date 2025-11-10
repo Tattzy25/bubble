@@ -150,11 +150,18 @@ async def root():
 if __name__ == "__main__":
     import sys
 
+    # Railway assigns a port via PORT environment variable
+    # Default to 8000 for local development
+    port = int(os.getenv("PORT", 8000))
+
+    print(f"Starting server on port {port}")
+    print(f"Health check: http://localhost:{port}/health")
+    print(f"Components API: http://localhost:{port}/list_components")
+
     # Run FastAPI server with HTTP endpoints for Railway compatibility
-    # MCP tools are available via HTTP POST to /list_components, /get_component, etc.
     uvicorn.run(
         "simple_server:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
+        port=port,
         reload=False
     )
