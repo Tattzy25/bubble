@@ -1,6 +1,3 @@
-[build]
-builder = "python"
-
 [deploy]
 startCommand = "python simple_server.py"
 healthcheckPath = "/list_components"
